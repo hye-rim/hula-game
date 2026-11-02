@@ -25,6 +25,10 @@
   #overlay .help { font-size:12px; color:#bdbdbd; line-height:1.7; }
   #overlay button { margin-top:6px; background:linear-gradient(180deg,#ffd0e6,#e85aa0); color:#2a0014; font-weight:900; font-size:17px; border:none; border-radius:999px; padding:12px 34px; box-shadow:0 4px 0 #8a1a4a; cursor:pointer; }
   #overlay button:active { transform:translateY(3px); box-shadow:0 1px 0 #8a1a4a; }
+  #overlay .lv { display:flex; gap:10px; margin-top:6px; }
+  #overlay .lv button { margin-top:0; padding:10px 18px; font-size:16px; }
+  #overlay .lv small { display:block; font-size:10px; font-weight:600; opacity:.75; margin-top:2px; }
+  #overlay .note { font-size:11px; color:#aab; }
   #top { position:absolute; right:3px; top:2px; display:flex; gap:6px; z-index:2; }
   #top button { position:relative; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.25); color:#fff; width:30px; height:30px; border-radius:8px; font-size:13px; cursor:pointer; }
   #top button::after { content:''; position:absolute; inset:-7px -4px; }
@@ -60,7 +64,7 @@
         <span class="pc">⌨️ D 뽑기 · T 땡큐 · S 스톱 · R 등록 · A 붙이기 · X 버리기 · 카드를 눌러 고르기</span>
         <span class="touch">👆 카드를 눌러 고르고 아래 버튼을 눌러요</span>
       </div>
-      <button id="startBtn">시작하기</button>
+      <div class="lv"><button id="startBtn" data-level="easy">쉬움<small>컴퓨터가 가끔 실수해요</small></button><button id="startBtn2" data-level="normal">보통<small>컴퓨터가 실수하지 않아요</small></button></div>
     </div>
   </div>
   <div id="controls">

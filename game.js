@@ -84,22 +84,28 @@ window.__hl = { get G() { return G; }, get state() { return state; }, L, setG(g)
 /* @test-hooks:end */
 
 // ---------- 흐름 ----------
-function showOverlay(html) { const o = $('overlay'); o.innerHTML = html; o.classList.remove('hidden'); o.querySelector('button').onclick = onOverlayButton; }
+function bindOverlay() { document.querySelectorAll('#overlay button').forEach((b) => { b.onclick = () => onOverlayButton(b.dataset.level); }); }
+function showOverlay(html) { const o = $('overlay'); o.innerHTML = html; o.classList.remove('hidden'); bindOverlay(); }
+const LEVEL_BUTTONS = '<div class="lv"><button id="startBtn" data-level="easy">쉬움<small>컴퓨터가 가끔 실수해요</small></button><button id="startBtn2" data-level="normal">보통<small>컴퓨터가 실수하지 않아요</small></button></div><p class="note">쉬움에서는 최고 기록이 저장되지 않아요</p>';
 function hideOverlay() { $('overlay').classList.add('hidden'); }
 function setBanner(text, sub = '', t = 2) { banner = { text, sub, t }; }
 let overlayMode = 'start';
-function onOverlayButton() {
+function onOverlayButton(level) {
   if (state === 'paused') { resume(); return; }
   if (overlayMode === 'next') { hideOverlay(); L.nextRound(G); selected.clear(); labels = ['', '', '', '']; handleEvents(); refresh(); return; }
-  startGame();
+  startGame(level);
 }
-function startGame() {
-  G = L.newGame();
+function startGame(level) {
+  if (/[?&]tutorial=1/.test(location.search)) level = 'easy';
+  level = level || store.get('hulaLevel');
+  level = level === 'normal' ? 'normal' : 'easy';
+  G = L.newGame(Math.random, { level });
+  store.set('hulaLevel', level);
   if (/[?&]tutorial=1/.test(location.search)) rigTutorial();
   selected.clear(); labels = ['', '', '', '']; attachMode = null; fxs = []; cpuT = 0;
   state = 'play'; overlayMode = 'start';
   hideOverlay(); sfx.start(); handleEvents(); refresh();
-  setBanner('ROUND 1', `${G.rounds}판 승부`, 1.6);
+  setBanner('ROUND 1', `${G.rounds}판 승부 · ${G.difficulty === 'easy' ? '쉬움' : '보통'}`, 1.6);
 }
 // 튜토리얼: 처음부터 내 차례에 등록할 수 있는 카드(5 세 장)를 쥐여 준다
 function rigTutorial() {
@@ -151,12 +157,12 @@ function showRoundEnd(r) {
   if (final) {
     const rank = L.ranking(G); const first = rank[0];
     extra = `<p class="big">${first === 0 ? '🏆 우승!' : `우승: ${nm(first)}`}</p>`;
-    if (G.players[0].score > bestScore) { bestScore = G.players[0].score; store.set('hulaBest', String(bestScore)); extra += '<p>🏆 내 최고 점수!</p>'; }
+    if (G.difficulty === 'normal' && G.players[0].score > bestScore) { bestScore = G.players[0].score; store.set('hulaBest', String(bestScore)); extra += '<p>🏆 내 최고 점수!</p>'; }
   }
   overlayMode = final ? 'start' : 'next';
   setTimeout(() => {
     if (state !== 'play' && state !== 'paused') return;
-    showOverlay(`<h2>${final ? '게임 끝' : `${G.round}/${G.rounds}판 끝`}</h2><p class="big">${title}</p><table style="font-size:12px;border-spacing:8px 2px"><tr style="opacity:.6"><td></td><td>손패</td><td>이번</td><td>합계</td></tr>${rows}</table>${extra}<button id="startBtn">${final ? '다시 하기' : '다음 판'}</button>`);
+    showOverlay(`<h2>${final ? '게임 끝' : `${G.round}/${G.rounds}판 끝`}</h2><p class="big">${title}</p><table style="font-size:12px;border-spacing:8px 2px"><tr style="opacity:.6"><td></td><td>손패</td><td>이번</td><td>합계</td></tr>${rows}</table>${extra}${final ? LEVEL_BUTTONS : '<button id="startBtn">다음 판</button>'}`);
   }, 1100);
 }
 
@@ -314,7 +320,7 @@ function frame(ts) {
 function toggleMute() { muted = !muted; store.set('hulaMuted', muted ? '1' : '0'); $('muteBtn').textContent = muted ? '🔇' : '🔊'; }
 $('muteBtn').onclick = (e) => { e.currentTarget.blur(); toggleMute(); };
 $('pauseBtn').onclick = (e) => { e.currentTarget.blur(); state === 'paused' ? resume() : pause(); };
-$('startBtn').onclick = onOverlayButton;
+bindOverlay();
 $('muteBtn').textContent = muted ? '🔇' : '🔊';
 addEventListener('blur', pause);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });

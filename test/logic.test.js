@@ -218,3 +218,20 @@ test('computer players: always legal, rounds end, and they register and attach w
   }
   assert.ok(registers > 50 && attaches > 5 && thank > 5 && (stops + outs) > 20, `reg ${registers} att ${attaches} ty ${thank} stop ${stops} out ${outs}`);
 });
+
+test('easy computers are weaker: the same player scores clearly better against them', () => {
+  const avg = (level) => {
+    let sum = 0, games = 40;
+    for (let g = 1; g <= games; g++) {
+      const st = L.newGame(L.rng(g * 977), { rounds: 3, level }); st.players.forEach((p) => { p.human = false; });
+      for (let k = 0; k < 30000 && st.phase !== 'matchover'; k++) { if (st.phase === 'roundover') { L.nextRound(st); continue; } L.cpuStep(st); st.events = []; }
+      sum += st.players[0].score;
+    }
+    return sum / games;
+  };
+  const normal = avg('normal'), easy = avg('easy');
+  assert.ok(easy > normal + 8, `easy ${easy} vs normal ${normal}`);
+  const st = L.newGame(L.rng(1), { level: 'easy' });
+  assert.ok(st.players.slice(1).every((p) => p.easy) && !st.players[0].easy);
+  assert.strictEqual(L.newGame(L.rng(1)).difficulty, 'normal');
+});

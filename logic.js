@@ -93,7 +93,8 @@ const LOGIC_HULA = (() => {
   // ---------- 게임 만들기 ----------
   function newGame(rand = Math.random, opts = {}) {
     const names = opts.names || NAMES;
-    const st = { rand, events: [], round: 0, rounds: opts.rounds || ROUNDS, dealer: -1, phase: 'idle', players: names.map((name, i) => ({ name, human: i === 0, hand: [], registered: false, score: 0 })), melds: [], stock: [], discard: [], turn: 0, mustUse: null, result: null, meldSeq: 0 };
+    const easy = opts.level === 'easy';
+    const st = { rand, events: [], round: 0, rounds: opts.rounds || ROUNDS, dealer: -1, phase: 'idle', players: names.map((name, i) => ({ name, human: i === 0, hand: [], registered: false, score: 0, easy: easy && i > 0 })), difficulty: opts.level || 'normal', melds: [], stock: [], discard: [], turn: 0, mustUse: null, result: null, meldSeq: 0 };
     startRound(st);
     return st;
   }
@@ -240,13 +241,14 @@ const LOGIC_HULA = (() => {
     const p = me(st);
     if (st.phase === 'draw') {
       const total = handPoints(p.hand);
-      if (canStop(st) && (total <= 7 || (total <= 12 && st.rand() < 0.5))) {
+      const stopOk = p.easy ? (st.turnCount >= 8 && total <= 7) : (total <= 7 || (total <= 12 && st.rand() < 0.5));        // 쉬움: 서두르지 않고, 확실할 때만 스톱
+      if (canStop(st) && stopOk) {
         // 상대 손패 수가 많으면(많이 못 털었으면) 성공 확률이 높다
         const minOthers = Math.min(...st.players.filter((q, i) => i !== st.turn).map((q) => q.hand.length));
         if (total <= 8 || minOthers >= p.hand.length) return stop(st);
       }
       const ty = canThankYou(st);
-      if (ty && draw(st, 'discard')) return true;
+      if (ty && !(p.easy && st.rand() < 0.4) && draw(st, 'discard')) return true;       // 쉬움: 가끔 땡큐를 놓침
       return draw(st, 'stock');
     }
     // 등록
@@ -259,7 +261,7 @@ const LOGIC_HULA = (() => {
       for (const m of st.melds) if (p.registered && canAttach(m, card)) return attach(st, card, m.id);
     }
     const pack = bestPacking(p.hand);
-    if (pack.picks.length) {
+    if (pack.picks.length && !(p.easy && st.rand() < 0.2)) {                             // 쉬움: 가끔 등록을 미룸
       // 가장 점수가 큰 묶음부터 등록
       const pick = pack.picks.slice().sort((a, b) => b.cards.reduce((s, c) => s + pointsOf(c), 0) - a.cards.reduce((s, c) => s + pointsOf(c), 0))[0];
       return register(st, pick.cards);
@@ -270,9 +272,9 @@ const LOGIC_HULA = (() => {
     const sevens = p.hand.filter((c) => rankOf(c) === 7);
     if (sevens.length && !p.registered && p.hand.length > 3 && st.rand() < 0.5) return register(st, [sevens[0]]);
     // 버리기
-    let best = p.hand[0], bestV = -1e9;
-    for (const c of p.hand) { const v = discardScore(st, p, c); if (v > bestV) { bestV = v; best = c; } }
-    return discard(st, best);
+    const ranked = p.hand.map((c) => ({ c, v: discardScore(st, p, c) })).sort((a, b) => b.v - a.v);
+    const pickIdx = p.easy && st.rand() < 0.3 ? Math.min(ranked.length - 1, 1 + Math.floor(st.rand() * 2)) : 0;     // 쉬움: 가끔 두세 번째로 나쁜 카드를 버림
+    return discard(st, ranked[pickIdx].c);
   }
 
   return {
