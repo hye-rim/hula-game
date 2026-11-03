@@ -235,3 +235,12 @@ test('easy computers are weaker: the same player scores clearly better against t
   assert.ok(st.players.slice(1).every((p) => p.easy) && !st.players[0].easy);
   assert.strictEqual(L.newGame(L.rng(1)).difficulty, 'normal');
 });
+
+test('turn counter starts at zero each round and counts turns', () => {
+  const st = L.newGame(L.rng(3), { rounds: 2, level: 'easy' });
+  L.startRound(st);
+  assert.strictEqual(st.turnCount, 0);
+  st.players.forEach((p) => { p.human = false; });
+  for (let i = 0; i < 40 && st.phase !== 'roundEnd' && st.phase !== 'over'; i++) L.cpuStep(st);
+  assert.ok(st.turnCount > 0 || st.phase === 'roundEnd' || st.phase === 'over');
+});

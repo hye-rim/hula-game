@@ -110,7 +110,7 @@ const LOGIC_HULA = (() => {
     for (const p of st.players) { p.hand = []; p.registered = false; p.turnStartRegistered = false; }
     for (let k = 0; k < HAND; k++) for (const p of st.players) p.hand.push(st.stock.pop());
     st.discard.push(st.stock.pop());
-    st.turn = (st.dealer + 1) % st.players.length;
+    st.turn = (st.dealer + 1) % st.players.length; st.turnCount = 0;
     st.phase = 'draw'; st.turnStartRegistered = false;
     st.players.forEach((p) => p.hand.sort((a, b) => a - b));
     emit(st, { t: 'round', round: st.round, dealer: st.dealer });
@@ -179,7 +179,7 @@ const LOGIC_HULA = (() => {
     p.hand.splice(p.hand.indexOf(card), 1); st.discard.push(card);
     emit(st, { t: 'discard', who: st.turn, card });
     if (p.hand.length === 0) { finishOut(st); return true; }
-    st.turn = (st.turn + 1) % st.players.length;
+    st.turn = (st.turn + 1) % st.players.length; st.turnCount++;
     beginTurn(st);
     return true;
   }
